@@ -1,143 +1,250 @@
-vacation_spots = [
-    {
-        'title':'Python Developer',
-        'location':'Remote',
-        'salary':100000,
-        'city':'San Francisco'
-    },
-    {
-        'title':'Data Scientist',
-        'location':'Remote',
-        'salary':120000,
-        'city':'San Francisco'
-    },
-    {
-        'title':'Web Developer',
-        'location':'Remote',
-        'salary':90000,
-        'city':'Los Angeles'
-    },
-    {
-        'title':'Software Engineer',
-        'location':'Remote',
-        'salary':110000,
-        'city':'Chicago'
-    },
-    {
-        'title':'Frontend Developer',
-        'location':'Remote',
-        'salary':95000,
-        'city':'Seattle'
-    },
-    {
-        'title':'DevOps Engineer',
-        'location':'Remote',
-        'salary':115000,
-        'city':'Boston'
-    },
-    {
-        'title':'Full Stack Developer',
-        'location':'Home',
-        'salary':105000,
-        'city':'Austin'
-    },
-    {
-        'title':'Machine Learning Engineer',
-        'location':'Remote',
-        'salary':130000,
-        'city':'Mountain View'
-    },
-    {
-        'title':'Database Administrator',
-        'location':'Home',
-        'salary':98000,
-        'city':'Denver'
-    },
-    {
-        'title':'Cloud Architect',
-        'location':'Home',    
-        'salary':140000,
-        'city':'Portland'
-    }
-]
-while True:
-    print('1 - Показ усіх вакансій \n 2 - Фільтр по місту \n 3 - Фільтр по зарплаті \n 4 - Тільки remote \n 5 - Пошук за назвою посади \n 6 - Вакансії, відсортовані по зарплаті \n 7 - Вакансії у конкретному місті \n 8 - Вийти')
-    option = int(input('Your option: '))
+import datetime
+from storage import load_tasks, save_tasks
+from task import Task
+
+def print_tasks(tasks):
+    """Виведення всіх задач в красивому форматі"""
+    if not tasks:
+        print('📭 Задач немає. Список порожній!\n')
+        return
+
+    # Сортуємо за пріоритетом (high -> medium -> low)
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    sorted_tasks = sorted(tasks, key=lambda t: (priority_order.get(t.priority, 1), t.id))
     
-    if option == 1:
-        print('\n--- Усі вакансії ---')
-        for spot in vacation_spots:
-            print(f'{spot["title"]} в {spot["city"]} - {spot["salary"]} грн')
-        print()
+    print('\n📋 ВАШІ ЗАДАЧИ (відсортовано за пріоритетом):')
+    print('='*60)
+    for task in sorted_tasks:
+        status_emoji = "✅" if task.status == "done" else "⏳"
+        priority_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(task.priority, "🟡")
+        print(f'{status_emoji} [{task.id}] {task.title} {priority_emoji}')
+        print(f'   📝 Опис: {task.description}')
+        print(f'   Статус: {task.status} | Пріоритет: {priority_emoji} {task.priority}')
+        print("-" * 60)
+    print()
+
+def add_task(tasks):
+        
+    print("\n ----ДОДАВАННЯ НОВОЇ ЗАДАЧІ----")
+    try:
+        title = input("Назва задачі: ").strip()
+        if not title:
+            print(" Назва не може бути порожною!")
+            return
+            
+        description = input("Опис задачі: ").strip()
+        if not description:
+            print(" Опис не може бути порожним!")
+            return
+        
+        print("Виберіть пріоритет:")
+        print("1. 🟢 low (низький)")
+        print("2. 🟡 medium (середній)")
+        print("3. 🔴 high (високий)")
+        priority_choice = input("Пріоритет (1-3, за замовчуванням 2): ").strip()
+        
+        priority_map = {"1": "low", "2": "medium", "3": "high"}
+        priority = priority_map.get(priority_choice, "medium")
+            
+        new_id = max([task.id for task in tasks], default=0)
+        new_task = Task(id=new_id, title=title, description=description, status="todo", priority=priority)
+        tasks.append(new_task)
+        save_tasks(tasks)
+        print(f" Задача '{title}' успішно додана! (Пріоритет: {priority})\n")
+        
+    except Exception as e:
+        print(f" Помилка при додаванні задачі: {e}\n")    
+
+def delete_task(tasks):
+    """Видалення задачи за ID"""
+    print("\n🗑️  ВИДАЛЕННЯ ЗАДАЧИ")
+    try:
+        if not tasks:
+            print("❌ Немає задач для видалення!\n")
+            return
+            
+        task_id = int(input("Введіть ID задачи для видалення: "))
+        
+        for i, task in enumerate(tasks):
+            if task.id == task_id:
+                deleted_task = tasks.pop(i)
+                save_tasks(tasks)
+                print(f"✅ Задача '{deleted_task.title}' видалена!\n")
+                return
+        
+        print(f"❌ Задача з ID {task_id} не знайдена!\n")
     
-    elif option == 2:
-        city = input('Введіть місто для фільтра: ')
-        print(f'\n--- Вакансії в {city} ---')
-        found = False
-        for spot in vacation_spots:
-            if city.lower() in spot['city'].lower():
-                print(f'{spot["title"]} - {spot["salary"]} грн')
-                found = True
-        if not found:
-            print(f'Вакансій в {city} не знайдено')
-        print()
+    except ValueError:
+        print("❌ Некоректний ID! Введіть число.\n")
+    except Exception as e:
+        print(f"❌ Помилка при видаленні: {e}\n")
+def search_task(tasks):
+    """Пошук задачи за ID"""
+    print("\n🔍 ПОШУК ЗАДАЧИ ЗА ID")
+    try:
+        if not tasks:
+            print("❌ Немає задач для пошуку!\n")
+            return
+            
+        task_id = int(input("Введіть ID задачи для пошуку: "))
+        
+        for task in tasks:
+            if task.id == task_id:
+                print(f"\n✅ Задача знайдена!")
+                status_emoji = "✅" if task.status == "done" else "⏳"
+                priority_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(task.priority, "🟡")
+                print(f"{status_emoji} [{task.id}] {task.title}")
+                print(f"   📝 Опис: {task.description}")
+                print(f"   Пріоритет: {priority_emoji} {task.priority}")
+                print(f"   Статус: {task.status}\n")
+                return
+        
+        print(f"❌ Задача з ID {task_id} не знайдена!\n")
     
-    elif option == 3:
+    except ValueError:
+        print("❌ Некоректний ID! Введіть число.\n")
+    except Exception as e:
+        print(f"❌ Помилка при пошуку: {e}\n")
+
+def mark_done(tasks):
+    """Позначити задачу як виконану"""
+    print("\n✅ ПОЗНАЧИТИ ЯК ВИКОНАНУ")
+    try:
+        if not tasks:
+            print("❌ Немає задач!\n")
+            return
+            
+        task_id = int(input("Введіть ID задачи: "))
+        
+        for task in tasks:
+            if task.id == task_id:
+                if task.status == "done":
+                    print(f"⚠️  Задача вже позначена як виконана!\n")
+                    return
+                
+                task.status = "done"
+                save_tasks(tasks)
+                print(f"✅ Задача '{task.title}' позначена як виконана!\n")
+                return
+        
+        print(f"❌ Задача з ID {task_id} не знайдена!\n")
+    
+    except ValueError:
+        print("❌ Некоректний ID! Введіть число.\n")
+    except Exception as e:
+        print(f"❌ Помилка: {e}\n")
+
+def edit_task(tasks):
+    """Редагування задачі"""
+    print("\n  ----РЕДАГУВАННЯ ЗАДАЧІ----")
+    try:
+        task_id = int(input("Введіть ID задачі для редагування: "))
+        
+        # Шукаємо задачу
+        for task in tasks:
+            if task.id == task_id:
+                priority_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(task.priority, "🟡")
+                print(f"\n📝 Поточні дані:")
+                print(f"   Назва: {task.title}")
+                print(f"   Опис: {task.description}")
+                print(f"   Пріоритет: {priority_emoji} {task.priority}\n")
+                
+                # Запитуємо нові дані
+                new_title = input("Нова назва (залиште порожним, щоб залишити без змін): ").strip()
+                new_description = input("Новий опис (залиште порожним, щоб залишити без змін): ").strip()
+                
+                print("\nЗмінити пріоритет? (залиште порожним для без змін)")
+                print("1. 🟢 low (низький)")
+                print("2. 🟡 medium (середній)")
+                print("3. 🔴 high (високий)")
+                priority_choice = input("Новий пріоритет (1-3): ").strip()
+                
+                # Оновлюємо тільки те, що було введено
+                if new_title:
+                    task.title = new_title
+                if new_description:
+                    task.description = new_description
+                if priority_choice in ["1", "2", "3"]:
+                    priority_map = {"1": "low", "2": "medium", "3": "high"}
+                    task.priority = priority_map[priority_choice]
+                
+                save_tasks(tasks)
+                print(f" Задача успішно оновлена!\n")
+                return
+        
+        print(f" Задача з ID {task_id} не знайдена!\n")
+    
+    except ValueError:
+        print(" Некоректний ID! Введіть число.\n")
+    except Exception as e:
+        print(f" Помилка при редагуванні: {e}\n")
+
+def show_menu():
+    """Виведення меню програми"""
+    print("\n" + "="*50)
+    print("📌 КОНСОЛЬНИЙ TASK MANAGER")
+    print("="*50)
+    print("1️⃣  Показати всі задачи")
+    print("2️⃣  Додати задачу")
+    print("3️⃣  Видалити задачу")
+    print("4️⃣  Позначити як виконану")
+    print("5️⃣  Редагувати задачу")
+    print("6️⃣  Пошук задач за ID")
+    print("7️⃣  Вийти")
+    print("="*50)
+    choice = input("Виберіть дію (1-7): ").strip()
+    return choice
+
+def main():
+    """Головна функція програми"""
+    print("\n🚀 Завантаження Task Manager...")
+    tasks = load_tasks()
+    
+    done_count = sum(1 for task in tasks if task.status == "done")
+    todo_count = len(tasks) - done_count
+    
+    print(f"✅ Завантажено {len(tasks)} задач (Виконано: {done_count}, Невиконано: {todo_count})\n")
+    
+    while True:
         try:
-            salary = int(input('Введіть зарплату для пошуку: '))
-            print(f'\n--- Вакансії з зарплатою {salary} грн ---')
-            found = False
-            for spot in vacation_spots:
-                if spot['salary'] == salary:
-                    print(f'{spot["title"]} в {spot["city"]} - {spot["salary"]} грн')
-                    found = True
-            if not found:
-                print(f'Вакансій з зарплатою {salary} не знайдено')
-            print()
-        except ValueError:
-            print('Введіть коректне число!')
-    
-    elif option == 4:
-        print('\n--- Тільки Remote вакансії ---')
-        for spot in vacation_spots:
-            if spot['location'].lower() == 'remote':
-                print(f'{spot["title"]} - {spot["salary"]} грн')
-        print()
-    
-    elif option == 5:
-        job_title = input('Введіть назву вакансії для пошуку: ')
-        print(f'\n--- Пошук за "{job_title}" ---')
-        found = False
-        for spot in vacation_spots:
-            if job_title.lower() in spot['title'].lower():
-                print(f'{spot["title"]} в {spot["city"]} - {spot["salary"]} грн ({spot["location"]})')
-                found = True
-        if not found:
-            print(f'Вакансії з назвою "{job_title}" не знайдено')
-        print()
-    
-    elif option == 6:
-        print('\n--- Вакансії, відсортовані по зарплаті (від високої до низької) ---')
-        sorted_spots = sorted(vacation_spots, key=lambda x: x['salary'], reverse=True)
-        for i, spot in enumerate(sorted_spots, 1):
-            print(f'{i}. {spot["title"]} в {spot["city"]} - {spot["salary"]} грн ({spot["location"]})')
-        print()
-    
-    elif option == 7:
-        job_city = input('Введіть назву міста для пошуку: ')
-        print(f'\n--- Вакансії у місті {job_city} ---')
-        found = False
-        for spot in vacation_spots:
-            if job_city.lower() in spot['city'].lower():
-                print(f'{spot["title"]} - {spot["salary"]} грн ({spot["location"]})')
-                found = True
-        if not found:
-            print(f'Вакансій у місті {job_city} не знайдено')
-        print()
-    
-    elif option == 8:
-        quit()
-    
-    else:
-        print('Невідома опція. Спробуйте ще раз.')
-        print()
+            choice = show_menu()
+            
+            if choice == "1":
+                print_tasks(tasks)
+            
+            elif choice == "2":
+                add_task(tasks)
+            
+            elif choice == "3":
+                print_tasks(tasks)
+                delete_task(tasks)
+            
+            elif choice == "4":
+                print_tasks(tasks)
+                mark_done(tasks)
+            
+            elif choice == "5":
+                print_tasks(tasks)
+                edit_task(tasks)
+            
+            elif choice == "6":
+                search_task(tasks)
+            
+            elif choice == "7":
+                print("\nДо зустрічі")
+                break
+            
+            else:
+                print(" Некоректний вибір! Виберіть 1-7.\n")
+            
+            
+        
+        except KeyboardInterrupt:
+            print("\n\n👋 Програма перервана користувачем. До світанку!")
+            break
+        except Exception as e:
+            print(f"❌ Невідома помилка: {e}\n")
+
+if __name__ == "__main__":
+    main()
+
