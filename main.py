@@ -3,16 +3,18 @@ from storage import load_tasks, save_tasks
 from task import Task
 
 def print_tasks(tasks):
-    """Виведення всіх задач в красивому форматі"""
     if not tasks:
         print('📭 Задач немає. Список порожній!\n')
         return
-
-    # Сортуємо за пріоритетом (high -> medium -> low)
-    priority_order = {"high": 0, "medium": 1, "low": 2}
-    sorted_tasks = sorted(tasks, key=lambda t: (priority_order.get(t.priority, 1), t.id))
     
-    print('\n📋 ВАШІ ЗАДАЧИ (відсортовано за пріоритетом):')
+    def sort_key(task):
+        status_priority = 0 if task.status == "todo" else 1  
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        return (status_priority, priority_order.get(task.priority, 1), task.id)
+    
+    sorted_tasks = sorted(tasks, key=sort_key)
+    
+    print('\n📋 ВАШІ ЗАДАЧИ (невиконані спочатку, потім за пріоритетом):')
     print('='*60)
     for task in sorted_tasks:
         status_emoji = "✅" if task.status == "done" else "⏳"
@@ -46,7 +48,7 @@ def add_task(tasks):
         priority_map = {"1": "low", "2": "medium", "3": "high"}
         priority = priority_map.get(priority_choice, "medium")
             
-        new_id = max([task.id for task in tasks], default=0)
+        new_id = max([task.id for task in tasks], default=0) + 1
         new_task = Task(id=new_id, title=title, description=description, status="todo", priority=priority)
         tasks.append(new_task)
         save_tasks(tasks)
@@ -56,7 +58,6 @@ def add_task(tasks):
         print(f" Помилка при додаванні задачі: {e}\n")    
 
 def delete_task(tasks):
-    """Видалення задачи за ID"""
     print("\n🗑️  ВИДАЛЕННЯ ЗАДАЧИ")
     try:
         if not tasks:
@@ -79,8 +80,7 @@ def delete_task(tasks):
     except Exception as e:
         print(f"❌ Помилка при видаленні: {e}\n")
 def search_task(tasks):
-    """Пошук задачи за ID"""
-    print("\n🔍 ПОШУК ЗАДАЧИ ЗА ID")
+    print("\n🔍 ----Пошук задачі по ID----")
     try:
         if not tasks:
             print("❌ Немає задач для пошуку!\n")
@@ -90,7 +90,7 @@ def search_task(tasks):
         
         for task in tasks:
             if task.id == task_id:
-                print(f"\n✅ Задача знайдена!")
+                print(f"\n Задача знайдена!")
                 status_emoji = "✅" if task.status == "done" else "⏳"
                 priority_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(task.priority, "🟡")
                 print(f"{status_emoji} [{task.id}] {task.title}")
@@ -107,8 +107,7 @@ def search_task(tasks):
         print(f"❌ Помилка при пошуку: {e}\n")
 
 def mark_done(tasks):
-    """Позначити задачу як виконану"""
-    print("\n✅ ПОЗНАЧИТИ ЯК ВИКОНАНУ")
+    print("\n---Позначити задачу як виконану----")
     try:
         if not tasks:
             print("❌ Немає задач!\n")
@@ -135,12 +134,9 @@ def mark_done(tasks):
         print(f"❌ Помилка: {e}\n")
 
 def edit_task(tasks):
-    """Редагування задачі"""
     print("\n  ----РЕДАГУВАННЯ ЗАДАЧІ----")
     try:
         task_id = int(input("Введіть ID задачі для редагування: "))
-        
-        # Шукаємо задачу
         for task in tasks:
             if task.id == task_id:
                 priority_emoji = {"low": "🟢", "medium": "🟡", "high": "🔴"}.get(task.priority, "🟡")
@@ -149,7 +145,6 @@ def edit_task(tasks):
                 print(f"   Опис: {task.description}")
                 print(f"   Пріоритет: {priority_emoji} {task.priority}\n")
                 
-                # Запитуємо нові дані
                 new_title = input("Нова назва (залиште порожним, щоб залишити без змін): ").strip()
                 new_description = input("Новий опис (залиште порожним, щоб залишити без змін): ").strip()
                 
@@ -158,8 +153,7 @@ def edit_task(tasks):
                 print("2. 🟡 medium (середній)")
                 print("3. 🔴 high (високий)")
                 priority_choice = input("Новий пріоритет (1-3): ").strip()
-                
-                # Оновлюємо тільки те, що було введено
+            
                 if new_title:
                     task.title = new_title
                 if new_description:
@@ -180,9 +174,8 @@ def edit_task(tasks):
         print(f" Помилка при редагуванні: {e}\n")
 
 def show_menu():
-    """Виведення меню програми"""
     print("\n" + "="*50)
-    print("📌 КОНСОЛЬНИЙ TASK MANAGER")
+    print("КОНСОЛЬНИЙ TASK MANAGER")
     print("="*50)
     print("1️⃣  Показати всі задачи")
     print("2️⃣  Додати задачу")
@@ -196,8 +189,6 @@ def show_menu():
     return choice
 
 def main():
-    """Головна функція програми"""
-    print("\n🚀 Завантаження Task Manager...")
     tasks = load_tasks()
     
     done_count = sum(1 for task in tasks if task.status == "done")
@@ -240,10 +231,10 @@ def main():
             
         
         except KeyboardInterrupt:
-            print("\n\n👋 Програма перервана користувачем. До світанку!")
+            print("\n\n Програма перервана користувачем. До зустрічі!")
             break
         except Exception as e:
-            print(f"❌ Невідома помилка: {e}\n")
+            print(f" Невідома помилка: {e}\n")
 
 if __name__ == "__main__":
     main()
