@@ -6,7 +6,7 @@
 
 :root {
     --brand-pink: #9C2482;
-    --white: #FFFFFF;
+    --white: #F5F5F5;
     --bg-outside: #F2E9E1;
 }
 
@@ -77,6 +77,24 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    
+    /* Змінюємо курсор на "палець" при наведенні */
+    cursor: pointer; 
+    
+    /* Додамо плавний перехід для фону, щоб він реагував на наведення */
+    transition: background-color 0.3s ease;
+}
+
+.phone-box:hover {
+    /* Легке підсвічування при наведенні, як у справжньої кнопки */
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.phone-number {
+    font-size: 18px;
+    color: var(--white);
+    /* Щоб номер не підкреслювався як посилання, якщо він всередині <a> */
+    text-decoration: none; 
 }
 
 /* --- MAIN SECTION --- */
